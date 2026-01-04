@@ -14,7 +14,8 @@ import os
 TARGET_URL = "https://www.skuniv.ac.kr/notice"
 
 # 내가 찾고 싶은 단어 (이 단어가 제목에 있으면 알림)
-KEYWORD = "창업"
+# 테스트용 키워드!!!
+KEYWORD = "안내"
 
 # 디스코드 웹훅, 이거 건드리면 안댐
 WEBHOOK_URL = os.environ["DISCORD_WEBHOOK"]
