@@ -3,11 +3,9 @@
 # BeautifulSoup : HTML에서 본문 텍스트만 깔끔하게 추출
 # os : 깃허브에 저장된 디스코드 웹훅 불러오기
 
-
 import requests
 from bs4 import BeautifulSoup
 import os
-
 
 # 1. 내가 바꿀 수 있는 설정값 (다른 학교 / 다른 키워드로 바꿀 때, 여기만 수정하면 됨)
 # 내가 찾고 싶은 키워드 (이 키워드가 제목 또는 본문에 있으면 알림)
@@ -17,49 +15,28 @@ KEYWORD = "안내"
 # 디스코드 웹훅, 이거 건드리면 안댐
 WEBHOOK_URL = os.environ["DISCORD_WEBHOOK"]
 
-
-# 2. 학교 공지사항 목록 가져오기 (JSON API)
-# 서경대 공지사항 API를 호출해서 최신 공지 목록을 가져오는 함수
+# 2. 학교 공지사항 목록 가져오기 (HTML 스크래핑)
+# 서경대 공지사항 페이지를 읽어서 최신 공지 목록을 가져오는 함수
 def get_notices():
-    api_url = "https://www.skuniv.ac.kr/notice/noticeListAjax.do"
-
-    # 최신 공지 10개 요청
-    params = {
-        "pageIndex": 1,
-        "pageUnit": 10
-    }
-
-    # 서버가 브라우저 요청으로 인식하도록 헤더 추가
-    headers = {
-        "User-Agent": "Mozilla/5.0"
-    }
-
-    res = requests.get(api_url, params=params, headers=headers)
+    url = "https://www.skuniv.ac.kr/notice"
+    headers = {"User-Agent": "Mozilla/5.0"}  # 간혹 서버가 봇 요청 차단해서 User-Agent 추가
+    res = requests.get(url, headers=headers)
     res.raise_for_status()
 
-    data = res.json()
+    soup = BeautifulSoup(res.text, "html.parser")
     notices = []
 
-    for item in data["resultList"]:
-        title = item["nttSj"]  # 공지 제목
-        ntt_id = item["nttId"]
-
-        # 공지 상세 페이지 URL
-        url = f"https://www.skuniv.ac.kr/notice/view.do?nttId={ntt_id}"
-
-        notices.append((title, url))
+    # 최신 공지 10개 가져오기
+    for item in soup.select("td.title a")[:10]:
+        title = item.get_text(strip=True)
+        link = "https://www.skuniv.ac.kr" + item["href"]
+        notices.append((title, link))
 
     return notices
 
-
 # 3. 공지 상세 페이지에 들어가서 본문 텍스트만 가져오는 함수
 def get_notice_content(url):
-    # 서버가 브라우저 요청으로 인식하도록 헤더 추가
-    headers = {
-        "User-Agent": "Mozilla/5.0"
-    }
-
-    res = requests.get(url, headers=headers)
+    res = requests.get(url)
     res.raise_for_status()
 
     soup = BeautifulSoup(res.text, "html.parser")
@@ -72,14 +49,12 @@ def get_notice_content(url):
 
     return ""
 
-
 # 4. 디스코드로 알림 보내는 함수 (제목과 본문에 키워드가 포함되어 있는 경우)
 def send_discord(title, url, where):
     message = {
         "content": f"📢 **{title}**\n🔍 키워드 발견 위치: {where}\n{url}"
     }
     requests.post(WEBHOOK_URL, json=message)
-
 
 # 5. 실제 실행되는 부분 (디버그용 로그 추가)
 # 이번 실행에서 이미 보낸 공지를 기억하기 위한 공간
