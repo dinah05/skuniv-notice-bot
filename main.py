@@ -69,13 +69,19 @@ def send_discord(title, url, where):
     requests.post(WEBHOOK_URL, json=message)
 
 
-# 5. 실제 실행되는 부분
+# 5. 실제 실행되는 부분 (디버그용 로그 추가)
 # 이번 실행에서 이미 보낸 공지를 기억하기 위한 공간
 # 같은 실행 안에서 중복 알림 방지하기 위함
 sent_this_run = set()
 
 # 공지 하나씩 확인
 for title, url in get_notices():
+    print("----")
+    print("제목:", title)
+    print("링크:", url)
+
+    content = get_notice_content(url)
+    print("본문 일부:", content[:100])
 
     # ① 제목에 키워드가 포함되어 있으면 바로 알림
     if KEYWORD in title and url not in sent_this_run:
@@ -83,9 +89,9 @@ for title, url in get_notices():
         sent_this_run.add(url)
         continue
 
-    # ② 제목에 없으면 → 공지 상세 페이지에 들어가서 본문 검사
-    content = get_notice_content(url)
-
+    # ② 제목에 없으면 -> 공지 상세 페이지에 들어가서 본문 검사
     if KEYWORD in content and url not in sent_this_run:
         send_discord(title, url, "본문")     # 디스코드로 알림 보내기
         sent_this_run.add(url)     # 보냈다고 기록
+
+requests.post(WEBHOOK_URL, json={"content": "GitHub Actions 테스트 메시지"})     #웹훅이 진짜 살아있는지 강제 테스트
