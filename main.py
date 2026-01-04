@@ -15,22 +15,31 @@ KEYWORD = "안내"
 # 디스코드 웹훅, 이거 건드리면 안댐
 WEBHOOK_URL = os.environ["DISCORD_WEBHOOK"]
 
-# 2. 학교 공지사항 목록 가져오기 (HTML 스크래핑)
-# 서경대 공지사항 페이지를 읽어서 최신 공지 목록을 가져오는 함수
+# 2. 학교 공지사항 목록 가져오기 (JSON API)
+# 서경대 공지사항 API를 호출해서 최신 공지 목록을 가져오는 함수
 def get_notices():
-    url = "https://www.skuniv.ac.kr/notice"
-    headers = {"User-Agent": "Mozilla/5.0"}  # 간혹 서버가 봇 요청 차단해서 User-Agent 추가
-    res = requests.get(url, headers=headers)
+    api_url = "https://www.skuniv.ac.kr/notice/noticeListAjax.do"
+
+    # 최신 공지 10개 요청
+    params = {
+        "pageIndex": 1,
+        "pageUnit": 10
+    }
+
+    res = requests.get(api_url, params=params)
     res.raise_for_status()
 
-    soup = BeautifulSoup(res.text, "html.parser")
+    data = res.json()
     notices = []
 
-    # 최신 공지 10개 가져오기
-    for item in soup.select("td.title a")[:10]:
-        title = item.get_text(strip=True)
-        link = "https://www.skuniv.ac.kr" + item["href"]
-        notices.append((title, link))
+    for item in data["resultList"]:
+        title = item["nttSj"]  # 공지 제목
+        ntt_id = item["nttId"]
+
+        # 공지 상세 페이지 URL
+        url = f"https://www.skuniv.ac.kr/notice/view.do?nttId={ntt_id}"
+
+        notices.append((title, url))
 
     return notices
 
@@ -54,7 +63,13 @@ def send_discord(title, url, where):
     message = {
         "content": f"📢 **{title}**\n🔍 키워드 발견 위치: {where}\n{url}"
     }
-    requests.post(WEBHOOK_URL, json=message)
+    try:
+        res = requests.post(WEBHOOK_URL, json=message)
+        print("Discord status:", res.status_code)
+        print("Discord response:", res.text)
+        res.raise_for_status()
+    except Exception as e:
+        print("Discord 알림 전송 실패:", e)
 
 # 5. 실제 실행되는 부분 (디버그용 로그 추가)
 # 이번 실행에서 이미 보낸 공지를 기억하기 위한 공간
