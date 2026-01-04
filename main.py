@@ -26,7 +26,13 @@ def get_notices():
         "pageUnit": 10
     }
 
-    res = requests.get(api_url, params=params)
+    # 브라우저처럼 보이도록 헤더 추가
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36",
+        "Referer": "https://www.skuniv.ac.kr/notice/noticeList.do"
+    }
+
+    res = requests.get(api_url, params=params, headers=headers)
     res.raise_for_status()
 
     data = res.json()
@@ -42,6 +48,7 @@ def get_notices():
         notices.append((title, url))
 
     return notices
+
 
 # 3. 공지 상세 페이지에 들어가서 본문 텍스트만 가져오는 함수
 def get_notice_content(url):
