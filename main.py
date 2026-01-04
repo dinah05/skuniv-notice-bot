@@ -38,8 +38,8 @@ def get_notices():
 
     # 수정: table.board_list 등 복잡한 경로 대신 핵심 클래스만 사용
     # 중요: td_subject (오타) -> td-subject (정상)
-    rows = soup.select("td.td-subject") # <--- (수정됨) 여기가 핵심 오류였어요!
-
+# 'subject'라는 단어가 들어가는 모든 칸을 찾습니다 (언더바, 하이픈 상관없음)
+rows = soup.select("td[class*='subject']")
     for row in rows[:10]:  # 최신 10개
         title_tag = row.select_one("a") # <--- (수정됨) td 안에 있는 a 태그 찾기
         if not title_tag:
