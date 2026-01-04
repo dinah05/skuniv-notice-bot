@@ -27,7 +27,7 @@ def get_notices():
      params = {
         "pageIndex": 1,
         "pageUnit": 10
-    }
+     }
 
     res = requests.get(api_url, params=params)
     res.raise_for_status()
@@ -79,7 +79,7 @@ sent_this_run = set()
 # 공지 하나씩 확인
 for title, url in get_notices():
 
-     # 제목에 키워드가 있는 경우
+    # 제목에 키워드가 있는 경우
     if KEYWORD in title and url not in sent_this_run:
         send_discord(title, url, "제목")
         sent_this_run.add(url)
