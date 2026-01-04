@@ -15,37 +15,30 @@ KEYWORD = "안내"
 # 디스코드 웹훅, 이거 건드리면 안댐
 WEBHOOK_URL = os.environ["DISCORD_WEBHOOK"]
 
-# 2. 학교 공지사항 목록 가져오기 (JSON API)
-# 서경대 공지사항 API를 호출해서 최신 공지 목록을 가져오는 함수
+# 2. 학교 공지사항 목록 가져오기 (HTML 크롤링)
+# 서경대 공지사항 페이지를 크롤링해서 최신 공지 10개 가져오기
 def get_notices():
-    api_url = "https://www.skuniv.ac.kr/notice/noticeListAjax.do"
-
-    # 최신 공지 10개 요청
-    params = {
-        "pageIndex": 1,
-        "pageUnit": 10
-    }
-
-    # 브라우저처럼 보이도록 헤더 추가
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36",
-        "Referer": "https://www.skuniv.ac.kr/notice/noticeList.do"
-    }
-
-    res = requests.get(api_url, params=params, headers=headers)
+    url = "https://www.skuniv.ac.kr/notice/noticeList.do"
+    res = requests.get(url)
     res.raise_for_status()
 
-    data = res.json()
+    soup = BeautifulSoup(res.text, "html.parser")
     notices = []
 
-    for item in data["resultList"]:
-        title = item["nttSj"]  # 공지 제목
-        ntt_id = item["nttId"]
+    # 공지사항 리스트 선택 (서경대 기준)
+    # tr 태그 중 클래스가 'bgc'가 아닌 일반 공지
+    rows = soup.select("table.board_list tbody tr")
 
-        # 공지 상세 페이지 URL
-        url = f"https://www.skuniv.ac.kr/notice/view.do?nttId={ntt_id}"
+    for row in rows[:10]:  # 최신 10개
+        title_tag = row.select_one("td.td_subject a")
+        if not title_tag:
+            continue
+        title = title_tag.get_text(strip=True)
+        href = title_tag.get("href")
+        # 상세 페이지 URL 완성
+        notice_url = f"https://www.skuniv.ac.kr{href}"
 
-        notices.append((title, url))
+        notices.append((title, notice_url))
 
     return notices
 
