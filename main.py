@@ -24,10 +24,10 @@ def get_notices():
     api_url = "https://www.skuniv.ac.kr/notice/noticeListAjax.do"
 
     # 최신 공지 10개 요청
-     params = {
+    params = {
         "pageIndex": 1,
         "pageUnit": 10
-     }
+    }
 
     res = requests.get(api_url, params=params)
     res.raise_for_status()
