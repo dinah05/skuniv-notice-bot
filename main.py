@@ -16,17 +16,19 @@ KEYWORD = "안내"
 WEBHOOK_URL = os.environ["DISCORD_WEBHOOK"]
 
 # 2. 학교 공지사항 목록 가져오기 (HTML 크롤링)
-# 서경대 공지사항 페이지를 크롤링해서 최신 공지 10개 가져오기
 def get_notices():
     url = "https://www.skuniv.ac.kr/notice/noticeList.do"
-    res = requests.get(url)
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                      "AppleWebKit/537.36 (KHTML, like Gecko) "
+                      "Chrome/118.0.5993.118 Safari/537.36"
+    }
+    res = requests.get(url, headers=headers)
     res.raise_for_status()
 
     soup = BeautifulSoup(res.text, "html.parser")
     notices = []
 
-    # 공지사항 리스트 선택 (서경대 기준)
-    # tr 태그 중 클래스가 'bgc'가 아닌 일반 공지
     rows = soup.select("table.board_list tbody tr")
 
     for row in rows[:10]:  # 최신 10개
@@ -35,9 +37,7 @@ def get_notices():
             continue
         title = title_tag.get_text(strip=True)
         href = title_tag.get("href")
-        # 상세 페이지 URL 완성
         notice_url = f"https://www.skuniv.ac.kr{href}"
-
         notices.append((title, notice_url))
 
     return notices
@@ -45,18 +45,21 @@ def get_notices():
 
 # 3. 공지 상세 페이지에 들어가서 본문 텍스트만 가져오는 함수
 def get_notice_content(url):
-    res = requests.get(url)
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                      "AppleWebKit/537.36 (KHTML, like Gecko) "
+                      "Chrome/118.0.5993.118 Safari/537.36"
+    }
+    res = requests.get(url, headers=headers)
     res.raise_for_status()
 
     soup = BeautifulSoup(res.text, "html.parser")
-
-    # 공지 본문 영역 (서경대 기준)
     content_area = soup.select_one(".view_con")
 
     if content_area:
         return content_area.get_text(strip=True)
-
     return ""
+
 
 # 4. 디스코드로 알림 보내는 함수 (제목과 본문에 키워드가 포함되어 있는 경우)
 def send_discord(title, url, where):
