@@ -29,7 +29,12 @@ def get_notices():
         "pageUnit": 10
     }
 
-    res = requests.get(api_url, params=params)
+    # 서버가 브라우저 요청으로 인식하도록 헤더 추가
+    headers = {
+        "User-Agent": "Mozilla/5.0"
+    }
+
+    res = requests.get(api_url, params=params, headers=headers)
     res.raise_for_status()
 
     data = res.json()
@@ -49,7 +54,12 @@ def get_notices():
 
 # 3. 공지 상세 페이지에 들어가서 본문 텍스트만 가져오는 함수
 def get_notice_content(url):
-    res = requests.get(url)
+    # 서버가 브라우저 요청으로 인식하도록 헤더 추가
+    headers = {
+        "User-Agent": "Mozilla/5.0"
+    }
+
+    res = requests.get(url, headers=headers)
     res.raise_for_status()
 
     soup = BeautifulSoup(res.text, "html.parser")
