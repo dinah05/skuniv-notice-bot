@@ -23,8 +23,7 @@ except KeyError:
 
 # 2. 학교 공지사항 목록 가져오기 (HTML 크롤링)
 def get_notices():
-    # URL 수정: noticeList.do 대신 일반 페이지 주소 사용 (크롤링 막힘 방지)
-    url = "https://www.skuniv.ac.kr/notice" # <--- (수정됨) 더 안전한 주소로 변경
+    url = "https://www.skuniv.ac.kr/notice"
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                       "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -36,26 +35,27 @@ def get_notices():
     soup = BeautifulSoup(res.text, "html.parser")
     notices = []
 
-    # 수정: table.board_list 등 복잡한 경로 대신 핵심 클래스만 사용
-    # 중요: td_subject (오타) -> td-subject (정상)
-# 'subject'라는 단어가 들어가는 모든 칸을 찾습니다 (언더바, 하이픈 상관없음)
-rows = soup.select("td[class*='subject']")
+    # 'subject'라는 단어가 들어가는 모든 칸을 찾습니다 (언더바, 하이픈 상관없음)
+    rows = soup.select("td[class*='subject']")
+
     for row in rows[:10]:  # 최신 10개
-        title_tag = row.select_one("a") # <--- (수정됨) td 안에 있는 a 태그 찾기
+        title_tag = row.select_one("a")
         if not title_tag:
             continue
+
         title = title_tag.get_text(strip=True)
         href = title_tag.get("href")
-        
+
         # 링크가 http로 시작하지 않으면 도메인 붙여주기
-        if href and not href.startswith("http"): # <--- (수정됨) 안전장치 추가
+        if href and not href.startswith("http"):
             notice_url = f"https://www.skuniv.ac.kr{href}"
         else:
             notice_url = href
-            
+
         notices.append((title, notice_url))
 
     return notices
+
 
 
 # 3. 공지 상세 페이지에 들어가서 본문 텍스트만 가져오는 함수
