@@ -21,16 +21,24 @@ def contains_keyword(text, keyword):
 # 2. 학교 공지사항 목록 가져오기 (공지 Ajax API를 직접 호출)
 def get_notices():
     url = "https://www.skuniv.ac.kr/notice/noticeListAjax.do"
+
     headers = {
         "User-Agent": "Mozilla/5.0",
         "X-Requested-With": "XMLHttpRequest",
+        "Referer": "https://www.skuniv.ac.kr/notice",
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
     }
+
     data = {
-        "pageIndex": 1,
-        "pageUnit": 10
+        "pageIndex": "1",
+        "pageUnit": "10",
+        "searchCondition": "",
+        "searchKeyword": ""
     }
 
     res = requests.post(url, headers=headers, data=data)
+    print("status:", res.status_code)
+    print("response snippet:", res.text[:200])  # 디버그용
     res.raise_for_status()
 
     soup = BeautifulSoup(res.text, "html.parser")
@@ -44,12 +52,17 @@ def get_notices():
 
         title = a.get_text(strip=True)
         href = a.get("href")
-        notice_url = f"https://www.skuniv.ac.kr{href}"
+
+        if href and not href.startswith("http"):
+            notice_url = f"https://www.skuniv.ac.kr{href}"
+        else:
+            notice_url = href
 
         notices.append((title, notice_url))
 
-    print("🔍 파싱된 공지 목록:", notices)
+    print("파싱된 공지 목록:", notices)
     return notices
+
 
     
 # 3. 디스코드로 알림 보내는 함수
