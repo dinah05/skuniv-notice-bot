@@ -11,7 +11,7 @@ import os
 # 1. 설정값 (여기만 바꾸면 됨)
 
 # 제목에 해당 키워드가 포함되면 알림 전송
-KEYWORD = "안내"
+KEYWORD = "창업"
 
 # 디스코드 웹훅 (GitHub Secrets에 DISCORD_WEBHOOK으로 저장돼 있어야 함)
 WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK", "")
