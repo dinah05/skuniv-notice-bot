@@ -26,7 +26,9 @@ def get_notices():
         return []
 
     soup = BeautifulSoup(res.text, "html.parser")
-    notices = []
+
+    print("HTML 일부 ↓↓↓")
+    print(res.text[:1500])
 
     # 서경대 공지 목록 구조 기준
     rows = soup.select("table.board_list tbody tr")
