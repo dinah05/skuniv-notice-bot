@@ -18,34 +18,39 @@ WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK", "")
 def contains_keyword(text, keyword):
     return keyword.replace(" ", "") in text.replace(" ", "").replace("\n", "")
 
-# 2. 학교 공지사항 목록 가져오기 (HTML 크롤링)
+# 2. 학교 공지사항 목록 가져오기 (공지 Ajax API를 직접 호출)
 def get_notices():
-    url = "https://www.skuniv.ac.kr/notice"
+    url = "https://www.skuniv.ac.kr/notice/noticeListAjax.do"
     headers = {
-        "User-Agent": "Mozilla/5.0"
+        "User-Agent": "Mozilla/5.0",
+        "X-Requested-With": "XMLHttpRequest",
     }
-    res = requests.get(url, headers=headers)
+    data = {
+        "pageIndex": 1,
+        "pageUnit": 10
+    }
+
+    res = requests.post(url, headers=headers, data=data)
     res.raise_for_status()
 
     soup = BeautifulSoup(res.text, "html.parser")
     notices = []
 
-    rows = soup.select("td[class*='subject'] a")
+    rows = soup.select("tr")
+    for row in rows:
+        a = row.select_one("a")
+        if not a:
+            continue
 
-    for row in rows[:10]:  # 최신 10개
-        title = row.get_text(strip=True)
-        href = row.get("href")
-
-        if href and not href.startswith("http"):
-            notice_url = f"https://www.skuniv.ac.kr{href}"
-        else:
-            notice_url = href
+        title = a.get_text(strip=True)
+        href = a.get("href")
+        notice_url = f"https://www.skuniv.ac.kr{href}"
 
         notices.append((title, notice_url))
 
-    print("파싱된 공지 목록:", notices)
-
+    print("🔍 파싱된 공지 목록:", notices)
     return notices
+
     
 # 3. 디스코드로 알림 보내는 함수
 def send_discord(title, url):
