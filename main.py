@@ -1,52 +1,38 @@
 # 0. 필요한 도구 불러오기
-# requests : 학교 서버 (API) 에 요청 보내는 도구
-# BeautifulSoup : HTML에서 본문 텍스트만 깔끔하게 추출
-# os : 깃허브에 저장된 디스코드 웹훅 불러오기
-
 import requests
 from bs4 import BeautifulSoup
 import os
 
-# 1. 내가 바꿀 수 있는 설정값 (다른 학교 / 다른 키워드로 바꿀 때, 여기만 수정하면 됨)
-# 내가 찾고 싶은 키워드 (이 키워드가 제목에 있으면 알림)
+# 1. 설정값
 KEYWORD = "안내"
-
-# 디스코드 웹훅
 WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK", "")
 
-# 키워드 판별 함수 (공백/줄바꿈 무시)
-def contains_keyword(text, keyword):
-    return keyword.replace(" ", "") in text.replace(" ", "").replace("\n", "")
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                  "AppleWebKit/537.36 (KHTML, like Gecko) "
+                  "Chrome/120.0.0.0 Safari/537.36"
+}
 
-# 2. 학교 공지사항 목록 가져오기 (공지 Ajax API를 직접 호출)
+# 2. 공지 목록 가져오기 (HTML 크롤링)
 def get_notices():
-    url = "https://www.skuniv.ac.kr/notice/noticeListAjax.do"
+    url = "https://www.skuniv.ac.kr/notice"
 
-    headers = {
-        "User-Agent": "Mozilla/5.0",
-        "X-Requested-With": "XMLHttpRequest",
-        "Referer": "https://www.skuniv.ac.kr/notice",
-        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
-    }
-
-    data = {
-        "pageIndex": "1",
-        "pageUnit": "10",
-        "searchCondition": "",
-        "searchKeyword": ""
-    }
-
-    res = requests.post(url, headers=headers, data=data)
-    print("status:", res.status_code)
-    print("response snippet:", res.text[:200])  # 디버그용
-    res.raise_for_status()
+    try:
+        res = requests.get(url, headers=HEADERS, timeout=10)
+        print("공지 페이지 status:", res.status_code)
+        res.raise_for_status()
+    except Exception as e:
+        print("공지 페이지 요청 실패:", e)
+        return []
 
     soup = BeautifulSoup(res.text, "html.parser")
     notices = []
 
-    rows = soup.select("tr")
-    for row in rows:
-        a = row.select_one("a")
+    # 서경대 공지 목록 구조 기준
+    rows = soup.select("table.board_list tbody tr")
+
+    for row in rows[:10]:
+        a = row.select_one("td.td_subject a")
         if not a:
             continue
 
@@ -60,33 +46,37 @@ def get_notices():
 
         notices.append((title, notice_url))
 
-    print("파싱된 공지 목록:", notices)
+    print("파싱된 공지 수:", len(notices))
     return notices
 
 
-    
-# 3. 디스코드로 알림 보내는 함수
+# 3. 디스코드 알림
 def send_discord(title, url):
     if not WEBHOOK_URL:
-        print("웹훅 없음")
+        print("웹훅 없음 → 디스코드 전송 생략")
         return
 
     message = {
-        "content": f"📢 **{title}**\n{url}"
+        "content": f" **{title}**\n{url}"
     }
-    requests.post(WEBHOOK_URL, json=message)
+
+    try:
+        res = requests.post(WEBHOOK_URL, json=message, timeout=10)
+        print("Discord status:", res.status_code)
+    except Exception as e:
+        print("디스코드 전송 실패:", e)
+
 
 # 4. 실행부
+print("공지 확인 시작")
 notices = get_notices()
-
 print(f"공지 개수: {len(notices)}")
 
 for title, url in notices:
     print("제목:", title)
 
-    if "안내" in title:
-        print("안내 키워드 매칭됨 → 디스코드 전송")
+    if KEYWORD in title:
+        print("키워드 매칭 → 디스코드 전송")
         send_discord(title, url)
     else:
-        print("키워드 불일치")
-
+        print("키워드 없음")
