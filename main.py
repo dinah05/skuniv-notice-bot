@@ -43,12 +43,14 @@ def get_notices():
 
         notices.append((title, notice_url))
 
-    return notices
+    print("파싱된 공지 목록:", notices)
 
+    return notices
+    
 # 3. 디스코드로 알림 보내는 함수
 def send_discord(title, url):
     if not WEBHOOK_URL:
-        print("❌ 웹훅 없음")
+        print("웹훅 없음")
         return
 
     message = {
@@ -57,14 +59,16 @@ def send_discord(title, url):
     requests.post(WEBHOOK_URL, json=message)
 
 # 4. 실행부
-sent_this_run = set()
+notices = get_notices()
 
-print("🔍 공지 확인 시작")
+print(f"공지 개수: {len(notices)}")
 
-for title, url in get_notices():
+for title, url in notices:
     print("제목:", title)
 
-    if contains_keyword(title, KEYWORD) and url not in sent_this_run:
-        print("✅ 키워드 발견! 알림 전송")
+    if "안내" in title:
+        print("안내 키워드 매칭됨 → 디스코드 전송")
         send_discord(title, url)
-        sent_this_run.add(url)
+    else:
+        print("키워드 불일치")
+
