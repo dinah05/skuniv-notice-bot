@@ -2,7 +2,7 @@ name: Check SKUNIV Notice
 
 on:
   schedule:
-    - cron: "*/30 * * * *"   # 30분마다 실행
+    - cron: "0 0 * * *"  # 매일 한국시간 오전 9시
   workflow_dispatch:
 
 jobs:
